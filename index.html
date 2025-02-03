@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hold to Boom</title>
+    <title>Hyper Inflation Game</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --balloon-width: 150px;
-            --balloon-height: 200px;
+            --balloon-size: 120px;
+            --button-height: 100px;
+            --spacing: 80px;
         }
 
         body {
             margin: 0;
             padding: 0;
             min-height: 100vh;
-            background: linear-gradient(45deg, #0f0c29, #302b63, #24243e);
+            background: linear-gradient(45deg, #1a1a2e, #16213e, #0f3460);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -30,19 +31,23 @@
             height: 100vh;
         }
 
-        .balloon {
+        .balloon-container {
             position: absolute;
-            bottom: -5px;
+            bottom: calc(var(--button-height) + var(--spacing));
             left: 50%;
             transform: translateX(-50%);
-            width: var(--balloon-width);
-            height: var(--balloon-height);
+            z-index: 1;
+            transition: transform 0.1s linear;
+        }
+
+        .balloon {
+            width: var(--balloon-size);
+            height: var(--balloon-size);
             background: linear-gradient(145deg, #ff00ff, #00ffff);
-            border-radius: 50%;
-            transition: all 0.1s linear;
+            border-radius: 50% 50% 45% 45%;
             box-shadow: 
-                0 0 30px #ff00ff,
-                inset 0 0 20px rgba(255,255,255,0.3);
+                0 0 40px #ff00ff,
+                inset 0 0 30px rgba(255,255,255,0.3);
             animation: glow 2s infinite alternate;
         }
 
@@ -51,71 +56,39 @@
             to { filter: hue-rotate(360deg); }
         }
 
-        .basket-button {
+        .control-button {
             position: fixed;
-            bottom: 30px;
+            bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
             padding: 25px 50px;
             background: linear-gradient(45deg, #ff00ff, #00ffff);
             border: none;
-            border-radius: 15px;
+            border-radius: 20px;
             color: white;
-            font-size: 1.5em;
+            font-size: 1.8em;
             cursor: pointer;
-            box-shadow: 0 0 30px rgba(0,255,255,0.5);
+            box-shadow: 0 0 40px rgba(0,255,255,0.6);
             transition: all 0.1s ease;
+            z-index: 2;
             font-weight: bold;
-            user-select: none;
         }
 
-        .basket-button:active {
+        .control-button:active {
             transform: translateX(-50%) scale(0.95);
         }
 
         .multiplier {
+            display: block;
             font-size: 1.5em;
-            color: #fff;
-            text-shadow: 0 0 15px #00ffff;
+            text-shadow: 0 0 20px #00ffff;
             animation: pulse 1s infinite;
         }
 
         @keyframes pulse {
             0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
+            50% { transform: scale(1.1); }
             100% { transform: scale(1); }
-        }
-
-        .explosion {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 8em;
-            color: #ff00ff;
-            text-shadow: 0 0 30px #00ffff, 0 0 60px #ff00ff, 0 0 90px #ffffff;
-            animation: explode 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-            display: none;
-            font-family: 'Impact', sans-serif;
-            z-index: 1000;
-        }
-
-        @keyframes explode {
-            0% { 
-                opacity: 1; 
-                transform: translate(-50%, -50%) scale(0.1) rotate(0deg); 
-                filter: blur(0px);
-            }
-            30% { 
-                opacity: 1; 
-                transform: translate(-50%, -50%) scale(3) rotate(360deg); 
-                filter: blur(2px) hue-rotate(180deg);
-            }
-            100% { 
-                opacity: 0; 
-                transform: translate(-50%, -50%) scale(8) rotate(720deg);
-                filter: blur(20px) hue-rotate(360deg);
-            }
         }
 
         .countdown {
@@ -123,28 +96,49 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 5em;
+            font-size: 6em;
             color: #fff;
-            text-shadow: 0 0 20px #00ffff;
+            text-shadow: 0 0 30px #00ffff;
             display: none;
+            z-index: 3;
+        }
+
+        .explosion {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10em;
+            color: #ff00ff;
+            text-shadow: 0 0 40px #00ffff, 0 0 80px #ff00ff, 0 0 120px #ffffff;
+            animation: explode 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            display: none;
+            font-family: 'Impact', sans-serif;
+            z-index: 4;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(0.1) rotate(0deg); opacity: 1; }
+            50% { transform: scale(3) rotate(360deg); opacity: 1; }
+            100% { transform: scale(6) rotate(720deg); opacity: 0; }
         }
 
         .wallet-section {
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 1000;
+            z-index: 5;
         }
 
         .connect-button {
             background: linear-gradient(45deg, #ff00ff, #00ffff);
             border: none;
-            padding: 12px 24px;
+            padding: 15px 30px;
             border-radius: 25px;
             color: white;
             cursor: pointer;
             font-weight: bold;
-            box-shadow: 0 0 15px rgba(0,255,255,0.5);
+            box-shadow: 0 0 20px rgba(0,255,255,0.5);
             transition: all 0.3s ease;
         }
 
@@ -153,9 +147,12 @@
             top: 20px;
             left: 20px;
             background: rgba(0,0,0,0.7);
-            padding: 10px 20px;
+            padding: 12px 24px;
             border-radius: 25px;
-            font-size: 0.9em;
+            font-size: 1em;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     </style>
 </head>
@@ -168,56 +165,63 @@
         </div>
         
         <div class="connected-address" id="connectedAddress"></div>
-        
+        <div class="balloon-container" id="balloonContainer">
+            <div class="balloon" id="balloon"></div>
+        </div>
         <div class="countdown" id="countdown"></div>
-        <div class="balloon" id="balloon"></div>
-        <button class="basket-button" id="basketButton">
+        <button class="control-button" id="controlButton">
             <span class="multiplier" id="multiplier">1x</span>
         </button>
         <div class="explosion" id="explosion">BOOM!</div>
     </div>
 
     <script>
+        // Game State
         let multiplier = 1;
-        let balloonSize = 1;
+        let balloonScale = 1;
         let isHolding = false;
-        let countdownTimeout;
+        let countdownInterval;
         let inflationInterval;
-        const explosionChance = 0.08;
+        const explosionChance = 0.12;
 
+        // Elements
         const elements = {
-            balloon: document.getElementById('balloon'),
-            basketButton: document.getElementById('basketButton'),
+            balloonContainer: document.getElementById('balloonContainer'),
+            controlButton: document.getElementById('controlButton'),
             multiplier: document.getElementById('multiplier'),
             explosion: document.getElementById('explosion'),
-            countdown: document.getElementById('countdown')
+            countdown: document.getElementById('countdown'),
+            connectButton: document.getElementById('connectButton'),
+            connectedAddress: document.getElementById('connectedAddress')
         }
 
-        // Gestione pressione tasto
-        elements.basketButton.addEventListener('mousedown', startCountdown);
-        elements.basketButton.addEventListener('touchstart', startCountdown);
-        
-        // Gestione rilascio tasto
-        elements.basketButton.addEventListener('mouseup', stopGame);
-        elements.basketButton.addEventListener('mouseleave', stopGame);
-        elements.basketButton.addEventListener('touchend', stopGame);
-        elements.basketButton.addEventListener('touchcancel', stopGame);
+        // Event Listeners
+        elements.controlButton.addEventListener('mousedown', startGame);
+        elements.controlButton.addEventListener('touchstart', startGame);
+        document.addEventListener('mouseup', stopGame);
+        document.addEventListener('touchend', stopGame);
 
-        function startCountdown(e) {
-            if(!userAddress) return;
+        // Game Logic
+        function startGame(e) {
             e.preventDefault();
-            isHolding = true;
-            elements.countdown.style.display = 'block';
+            if(!window.userAddress) return alert('Connetti un wallet!');
+            if(isHolding) return;
             
+            isHolding = true;
+            startCountdown();
+        }
+
+        function startCountdown() {
+            elements.countdown.style.display = 'block';
             let count = 3;
             elements.countdown.textContent = count;
 
-            countdownTimeout = setInterval(() => {
+            countdownInterval = setInterval(() => {
                 count--;
                 elements.countdown.textContent = count;
-                
+
                 if(count <= 0) {
-                    clearInterval(countdownTimeout);
+                    clearInterval(countdownInterval);
                     elements.countdown.style.display = 'none';
                     startInflation();
                 }
@@ -227,45 +231,109 @@
         function startInflation() {
             inflationInterval = setInterval(() => {
                 if(!isHolding) return;
-                
-                balloonSize *= 1.02;
-                multiplier += 0.05 + (Math.random() * 0.1);
-                
-                elements.balloon.style.width = (150 * balloonSize) + "px";
-                elements.balloon.style.height = (200 * balloonSize) + "px";
-                elements.balloon.style.bottom = (-5 + (200 * balloonSize)) + "px";
+
+                balloonScale *= 1.03;
+                multiplier += 0.08 + (Math.random() * 0.12);
+
+                elements.balloonContainer.style.transform = 
+                    `translateX(-50%) scale(${balloonScale})`;
                 elements.multiplier.textContent = `${multiplier.toFixed(1)}x`;
 
-                if(Math.random() < explosionChance || balloonSize > 5) {
+                if(Math.random() < explosionChance || balloonScale > 4.5) {
                     triggerExplosion();
                 }
             }, 50);
         }
 
         function stopGame() {
+            if(!isHolding) return;
             isHolding = false;
-            clearInterval(countdownTimeout);
+            clearInterval(countdownInterval);
             clearInterval(inflationInterval);
             elements.countdown.style.display = 'none';
+            
+            if(balloonScale > 1.8) {
+                triggerExplosion();
+            } else {
+                resetGame();
+            }
         }
 
         function triggerExplosion() {
-            stopGame();
             elements.explosion.style.display = 'block';
-            elements.balloon.style.display = 'none';
+            elements.balloon.style.opacity = '0';
             
             setTimeout(() => {
-                location.reload();
+                resetGame();
             }, 2000);
         }
 
-        // Wallet Integration (semplificata)
-        let userAddress = null;
-        document.getElementById('connectButton').addEventListener('click', () => {
-            // Simulazione connessione wallet
-            userAddress = '0x1234...abcd';
-            document.getElementById('connectedAddress').textContent = userAddress;
-            elements.basketButton.disabled = false;
+        function resetGame() {
+            balloonScale = 1;
+            multiplier = 1;
+            elements.balloon.style.opacity = '1';
+            elements.balloonContainer.style.transform = 'translateX(-50%) scale(1)';
+            elements.multiplier.textContent = '1x';
+            elements.explosion.style.display = 'none';
+        }
+
+        // Wallet Integration
+        async function connectWallet(walletType) {
+            try {
+                let address;
+                switch(walletType) {
+                    case 'metamask':
+                        address = await connectMetaMask();
+                        break;
+                    case 'phantom':
+                        address = await connectPhantom();
+                        break;
+                    case 'coinbase':
+                        address = await connectCoinbase();
+                        break;
+                }
+                window.userAddress = address;
+                updateWalletUI();
+            } catch (error) {
+                alert(`Errore: ${error.message}`);
+            }
+        }
+
+        async function connectMetaMask() {
+            if(!window.ethereum) throw new Error('Installa MetaMask!');
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            return accounts[0];
+        }
+
+        async function connectPhantom() {
+            if(!window.solana) throw new Error('Installa Phantom!');
+            const resp = await window.solana.connect();
+            return resp.publicKey.toString();
+        }
+
+        async function connectCoinbase() {
+            const WalletLink = await import('https://cdn.jsdelivr.net/npm/walletlink@2/dist/walletlink.min.js');
+            const walletLink = new WalletLink.WalletLink({
+                appName: "Hyper Inflation",
+                appLogoUrl: "https://example.com/logo.png"
+            });
+            const provider = walletLink.makeWeb3Provider("https://mainnet.infura.io/v3/YOUR_INFURA_KEY", 1);
+            const accounts = await provider.enable();
+            return accounts[0];
+        }
+
+        function updateWalletUI() {
+            elements.connectButton.innerHTML = `<i class="fas fa-check"></i> CONNESSO`;
+            elements.connectedAddress.textContent = 
+                `${window.userAddress.slice(0, 6)}...${window.userAddress.slice(-4)}`;
+        }
+
+        // Init
+        elements.connectButton.addEventListener('click', async () => {
+            const walletType = prompt("Scegli wallet (metamask/phantom/coinbase):");
+            if(['metamask','phantom','coinbase'].includes(walletType.toLowerCase())) {
+                await connectWallet(walletType.toLowerCase());
+            }
         });
     </script>
 </body>
