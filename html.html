@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hold to Boom</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --balloon-width: 150px;
+            --balloon-height: 200px;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(45deg, #0f0c29, #302b63, #24243e);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            touch-action: manipulation;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .balloon {
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: var(--balloon-width);
+            height: var(--balloon-height);
+            background: linear-gradient(145deg, #ff00ff, #00ffff);
+            border-radius: 50%;
+            transition: all 0.1s linear;
+            box-shadow: 
+                0 0 30px #ff00ff,
+                inset 0 0 20px rgba(255,255,255,0.3);
+            animation: glow 2s infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: hue-rotate(0deg); }
+            to { filter: hue-rotate(360deg); }
+        }
+
+        .basket-button {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 25px 50px;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(0,255,255,0.5);
+            transition: all 0.1s ease;
+            font-weight: bold;
+            user-select: none;
+        }
+
+        .basket-button:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+
+        .multiplier {
+            font-size: 1.5em;
+            color: #fff;
+            text-shadow: 0 0 15px #00ffff;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .explosion {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 8em;
+            color: #ff00ff;
+            text-shadow: 0 0 30px #00ffff, 0 0 60px #ff00ff, 0 0 90px #ffffff;
+            animation: explode 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            display: none;
+            font-family: 'Impact', sans-serif;
+            z-index: 1000;
+        }
+
+        @keyframes explode {
+            0% { 
+                opacity: 1; 
+                transform: translate(-50%, -50%) scale(0.1) rotate(0deg); 
+                filter: blur(0px);
+            }
+            30% { 
+                opacity: 1; 
+                transform: translate(-50%, -50%) scale(3) rotate(360deg); 
+                filter: blur(2px) hue-rotate(180deg);
+            }
+            100% { 
+                opacity: 0; 
+                transform: translate(-50%, -50%) scale(8) rotate(720deg);
+                filter: blur(20px) hue-rotate(360deg);
+            }
+        }
+
+        .countdown {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 5em;
+            color: #fff;
+            text-shadow: 0 0 20px #00ffff;
+            display: none;
+        }
+
+        .wallet-section {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .connect-button {
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(0,255,255,0.5);
+            transition: all 0.3s ease;
+        }
+
+        .connected-address {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="wallet-section">
+            <button class="connect-button" id="connectButton">
+                <i class="fas fa-wallet"></i> CONNETTI WALLET
+            </button>
+        </div>
+        
+        <div class="connected-address" id="connectedAddress"></div>
+        
+        <div class="countdown" id="countdown"></div>
+        <div class="balloon" id="balloon"></div>
+        <button class="basket-button" id="basketButton">
+            <span class="multiplier" id="multiplier">1x</span>
+        </button>
+        <div class="explosion" id="explosion">BOOM!</div>
+    </div>
+
+    <script>
+        let multiplier = 1;
+        let balloonSize = 1;
+        let isHolding = false;
+        let countdownTimeout;
+        let inflationInterval;
+        const explosionChance = 0.08;
+
+        const elements = {
+            balloon: document.getElementById('balloon'),
+            basketButton: document.getElementById('basketButton'),
+            multiplier: document.getElementById('multiplier'),
+            explosion: document.getElementById('explosion'),
+            countdown: document.getElementById('countdown')
+        }
+
+        // Gestione pressione tasto
+        elements.basketButton.addEventListener('mousedown', startCountdown);
+        elements.basketButton.addEventListener('touchstart', startCountdown);
+        
+        // Gestione rilascio tasto
+        elements.basketButton.addEventListener('mouseup', stopGame);
+        elements.basketButton.addEventListener('mouseleave', stopGame);
+        elements.basketButton.addEventListener('touchend', stopGame);
+        elements.basketButton.addEventListener('touchcancel', stopGame);
+
+        function startCountdown(e) {
+            if(!userAddress) return;
+            e.preventDefault();
+            isHolding = true;
+            elements.countdown.style.display = 'block';
+            
+            let count = 3;
+            elements.countdown.textContent = count;
+
+            countdownTimeout = setInterval(() => {
+                count--;
+                elements.countdown.textContent = count;
+                
+                if(count <= 0) {
+                    clearInterval(countdownTimeout);
+                    elements.countdown.style.display = 'none';
+                    startInflation();
+                }
+            }, 1000);
+        }
+
+        function startInflation() {
+            inflationInterval = setInterval(() => {
+                if(!isHolding) return;
+                
+                balloonSize *= 1.02;
+                multiplier += 0.05 + (Math.random() * 0.1);
+                
+                elements.balloon.style.width = (150 * balloonSize) + "px";
+                elements.balloon.style.height = (200 * balloonSize) + "px";
+                elements.balloon.style.bottom = (-5 + (200 * balloonSize)) + "px";
+                elements.multiplier.textContent = `${multiplier.toFixed(1)}x`;
+
+                if(Math.random() < explosionChance || balloonSize > 5) {
+                    triggerExplosion();
+                }
+            }, 50);
+        }
+
+        function stopGame() {
+            isHolding = false;
+            clearInterval(countdownTimeout);
+            clearInterval(inflationInterval);
+            elements.countdown.style.display = 'none';
+        }
+
+        function triggerExplosion() {
+            stopGame();
+            elements.explosion.style.display = 'block';
+            elements.balloon.style.display = 'none';
+            
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        }
+
+        // Wallet Integration (semplificata)
+        let userAddress = null;
+        document.getElementById('connectButton').addEventListener('click', () => {
+            // Simulazione connessione wallet
+            userAddress = '0x1234...abcd';
+            document.getElementById('connectedAddress').textContent = userAddress;
+            elements.basketButton.disabled = false;
+        });
+    </script>
+</body>
+</html>
